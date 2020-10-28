@@ -13,7 +13,9 @@ int hijau_kiri = 2;
 int led_terang = 12;
 int led_redup = 13;
 int ledState = LOW; 
+int kedip = 0;
 bool untuk_led = false;
+unsigned long waktu_led;
 unsigned long waktu_led_terang;
 unsigned long waktu_led_redup;
 unsigned long waktu_led_sekarang;
@@ -47,6 +49,7 @@ unsigned long nah;
 unsigned long waktu = 8000;
 unsigned long waktu_lama = 60000;
 unsigned long waktu_depan_lagi;
+unsigned long waktuLepas;
 ////////////////////////////////////////////
 void setup(void) {
   Serial.begin(9600);
@@ -76,9 +79,13 @@ void masuk(){
     ir_right_state_last = ir_right_state;
       if( (bWalkIn == false) && ( ir_right_state == LOW ) ){
         bWalkIn = true;
-         tm = millis();
+        tm = millis();
       }
   }
+    
+  if((millis() - tm) > 4000) {
+        bWalkIn = false;
+    }
 
   if((cekMasuk == false)&&( bWalkIn == true) && (ir_left_state == LOW) && (ir_right_state == HIGH) ){
     bWalkIn = false;
@@ -92,9 +99,7 @@ void masuk(){
   if((millis()-cm) > 300000){
     cekMasuk = false;
   }
-  if((millis()-tm) > 10000){
-    untuk_led = false;
-  }
+
 }
 /////////////////////////////// sensor didepan ///////////////////////////////
 void di_depan(){
@@ -141,38 +146,54 @@ void keluar(){
 }
 /////////////////////// led kedip //////////////////////////
 void led_kedip(){
- if(untuk_led == true) { 
+ if(untuk_led == true) {
+  waktu_led = millis(); 
   if(nilai_ldr >= 180){
     waktu_led_terang = millis();
-      if((ledState == HIGH) && (waktu_led_terang - waktu_led_sekarang >= 150))
+      if((ledState == HIGH) && (waktu_led_terang - waktu_led_sekarang >= 200))
       {
         ledState = LOW;  // Turn it off
         waktu_led_sekarang = waktu_led_terang;  // Remember the time
         digitalWrite(led_terang , ledState);
       }
-      else if ((ledState == LOW) && (waktu_led_terang - waktu_led_sekarang >= 650))
+      else if ((ledState == LOW) && (waktu_led_terang - waktu_led_sekarang >= 600))
       {
         ledState = HIGH;
         waktu_led_sekarang = waktu_led_terang;
         digitalWrite(led_terang , ledState);
+        kedip++;
       }
+            if (kedip > 10){
+                untuk_led = false;
+                ledState = LOW;
+                digitalWrite(led_terang,ledState);
+                kedip = 0;
+                }
   } 
   if(nilai_ldr <= 180){
     waktu_led_redup = millis();
-      if((ledState == HIGH) && (waktu_led_redup - waktu_led_sekarang >= 150))
+      if((ledState == HIGH) && (waktu_led_redup - waktu_led_sekarang >= 200))
       {
         ledState = LOW;
         waktu_led_sekarang = waktu_led_redup;
         digitalWrite(led_redup , ledState);
       }
-      else if ((ledState == LOW) && (waktu_led_redup - waktu_led_sekarang >= 650))
+      else if ((ledState == LOW) && (waktu_led_redup - waktu_led_sekarang >= 600))
       {
         ledState = HIGH;
         waktu_led_sekarang = waktu_led_redup;
         digitalWrite(led_redup , ledState);
+        kedip++;
       }
-  } 
+            if (kedip > 10){
+                untuk_led = false;
+                ledState = LOW;
+                digitalWrite(led_redup,ledState);
+                kedip = 0;
+        }
+  }
  }
+
 }
 /////////////////// led indikator ///////////////////////
 void led_indikator(){
