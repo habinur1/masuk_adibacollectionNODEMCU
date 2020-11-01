@@ -25,7 +25,7 @@ int melody[] = {
   NOTE_D7, NOTE_B6, 0, 0
  };
 // note durations: 4 = quarter note, 8 = eighth note, etc.:
-int noteDurations[] = {
+int tempo[] = {
     12, 12, 12, 12,
   12, 12, 12, 12,
   12, 12, 12, 12,
