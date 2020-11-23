@@ -7,13 +7,18 @@ byte ldr = A0;
 int nilai_ldr;
 ////////////////////////////////////////////
 ////////////// variable led ////////////////
+int hitung_kedip = 0;
 int biru_kanan = 0;
 int hijau_kiri = 2;
 int led_terang = 12;
 int led_redup = 13;
 int printahLed = LOW; 
 int kedip = 0;
+int jumlah_flash = 0;
 bool untuk_led = false;
+unsigned long waktu_flash;
+unsigned long waktu_kedipON;
+unsigned long waktu_kedipOFF;
 unsigned long waktu_led;
 unsigned long waktu_led_terang;
 unsigned long waktu_led_redup;
@@ -82,19 +87,24 @@ void masuk(){
     
   if((millis() - waktu_masuk) > 4000) {
         jalan_masuk = false;
+//        hitung_masuk = 0;
     }
 
-  if((cekMasuk == false)&&( jalan_masuk == true) && (kiri_state == LOW) && (kanan_state == HIGH) ){
-    jalan_masuk = false;
-    cekMasuk = true;
-    waktu_stop_masuk = millis();
-    hitung_masuk++;
-    untuk_led = true;
-    untuk_buzzer = true;
-  }
+if((kiri_state == LOW) && (kanan_state == HIGH)){
+  if ((cekMasuk == false)&&( jalan_masuk == true)){
+      jalan_masuk = false;
+      cekMasuk = true;
+      waktu_stop_masuk = millis();
+      hitung_kedip = 22;
+      untuk_led = true;
+      untuk_buzzer = true;
+//    hitung_masuk++;
+    }
+}
 
-  if((millis()-waktu_stop_masuk) > 300000){
+  if((millis()- waktu_stop_masuk) > 200000){
     cekMasuk = false;
+    waktu_stop_masuk = 0;
   }
 
 }
@@ -111,63 +121,76 @@ ck = millis() - waktu_depan_lagi;
   if ( (kanan_state == LOW)&&(kiri_state == HIGH)&&(jalan_keluar ==  false)){
     if(ck == waktu ){
         Serial.println("ada TAMU di Depan TOKO");
-          untuk_led = true;
-          untuk_buzzer = true;
+         untuk_led = true;
+         untuk_buzzer = true;
+         hitung_kedip = 12;
       }
       else{}
 
         if(ck == waktu_lama ){
         Serial.println("ada Orang di Depan TOKO Sudah LAMA");
-          untuk_led = true;
+         untuk_led = true;
+         hitung_kedip = 30;
       }
       else {}
   }
 }
 /////////////////////////// sensor keluar //////////////////////
-//void keluar(){
-// if( kiri_state != kiri_stateTerakhir ){
-//    kiri_stateTerakhir = kiri_state;
-//      if( (jalan_keluar == false) && ( kiri_state == LOW ) ){
-//        jalan_keluar = true;
-//        waktu_masuk = millis();
-//      }
-//  }
-// if( (millis() - waktu_masuk) > 1200 ){
-//    jalan_keluar = false;
-//  }
-// if( jalan_keluar && (kanan_state == LOW) && (kiri_state == HIGH) ){
-//    jalan_keluar = false;
+void keluar(){
+ if( kiri_state != kiri_stateTerakhir ){
+    kiri_stateTerakhir = kiri_state;
+      if( (jalan_keluar == false) && ( kiri_state == LOW ) ){
+        jalan_keluar = true;
+        waktu_masuk = millis();
+      }
+  }
+ if( (millis() - waktu_masuk) > 1200 ){
+    jalan_keluar = false;
+  }
+ if( jalan_keluar && (kanan_state == LOW) && (kiri_state == HIGH) ){
+    jalan_keluar = false;
 //    hitung_keluar++;
-//    Serial.println(" * Keluar * ");
-//  }
-//}
+    hitung_kedip = 3;
+    untuk_led = true;
+    Serial.println(" * Keluar * ");
+  }
+}
 /////////////////////// led kedip //////////////////////////
 void led_kedip(){
  if(untuk_led == true) {
   waktu_led = millis(); 
-  if(nilai_ldr >= 180){
+  if(nilai_ldr >= 200){
     waktu_led_terang = millis();
-      if((printahLed == HIGH) && (waktu_led_terang - waktu_led_sekarang >= 200))
+    waktu_kedipON = 250;
+    waktu_kedipOFF = 100;
+      if((printahLed == HIGH) && (waktu_led_terang - waktu_led_sekarang >= waktu_kedipON))
       {
         printahLed = LOW;  // Turn it off
         waktu_led_sekarang = waktu_led_terang;  // Remember the time
         digitalWrite(led_terang , printahLed);
       }
-      else if ((printahLed == LOW) && (waktu_led_terang - waktu_led_sekarang >= 600))
+      if ((printahLed == LOW) && (waktu_led_terang - waktu_led_sekarang >= waktu_kedipOFF))
       {
         printahLed = HIGH;
         waktu_led_sekarang = waktu_led_terang;
         digitalWrite(led_terang , printahLed);
         kedip++;
+        Serial.print("jumlah kedip = ");
+        Serial.println(kedip);
       }
-            if (kedip > 20){
-                untuk_led = false;
-                printahLed = LOW;
-                digitalWrite(led_terang,printahLed);
-                kedip = 0;
-                }
+
+                if (kedip > hitung_kedip){
+                    untuk_led = false;
+                    printahLed = LOW;
+                    digitalWrite(led_terang,printahLed);
+                    kedip = 0;
+                    waktu_led_terang = 0;
+                    waktu_led_sekarang = 0;
+                    }
   } 
-  if(nilai_ldr <= 180){
+
+   
+  if(nilai_ldr <= 200){
     waktu_led_redup = millis();
       if((printahLed == HIGH) && (waktu_led_redup - waktu_led_sekarang >= 200))
       {
@@ -182,11 +205,12 @@ void led_kedip(){
         digitalWrite(led_redup , printahLed);
         kedip++;
       }
-            if (kedip > 12){
+            if (kedip > hitung_kedip){
                 untuk_led = false;
-                printahLed = LOW;
-                digitalWrite(led_redup,printahLed);
+                digitalWrite(led_redup,LOW);
                 kedip = 0;
+                waktu_led_terang = 0;
+                waktu_led_sekarang = 0;
         }
   }
  }
